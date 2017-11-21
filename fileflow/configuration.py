@@ -53,14 +53,20 @@ if not airflow_configuration.has_option('fileflow', 'aws_access_key_id'):
         airflow_configuration.set('fileflow', 'aws_access_key_id', aws_access_key_id_env_var)
     else:
         boto_aws_access_key_id_default = boto_config.get('Credentials', 'aws_access_key_id')
-        airflow_configuration.set('fileflow', 'aws_access_key_id', boto_aws_access_key_id_default)
+        if boto_aws_access_key_id_default:
+            airflow_configuration.set('fileflow', 'aws_access_key_id', boto_aws_access_key_id_default)
+        else:
+            raise ValueError('No AWS access key_id found')
 
 if not airflow_configuration.has_option('fileflow', 'aws_secret_access_key'):
     if aws_secret_access_key_env_var:
         airflow_configuration.set('fileflow', 'aws_secret_access_key', aws_secret_access_key_env_var)
     else:
         boto_aws_secret_access_key_default = boto_config.get('Credentials', 'aws_secret_access_key')
-        airflow_configuration.set('fileflow', 'aws_secret_access_key', boto_aws_secret_access_key_default)
+        if boto_aws_secret_access_key_default:
+            airflow_configuration.set('fileflow', 'aws_secret_access_key', boto_aws_secret_access_key_default)
+        else:
+            raise ValueError('No AWS secret access key found')
 
 
 def get(section, key, **kwargs):

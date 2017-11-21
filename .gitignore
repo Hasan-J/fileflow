@@ -144,3 +144,8 @@ fabric.properties
 # .idea/misc.xml
 # *.ipr
 .idea
+
+## Vscode Stuff ##
+.vscode
+airflow.cfg
+unittests.cfg

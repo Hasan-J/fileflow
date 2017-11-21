@@ -237,7 +237,7 @@ class TestTaskRunner(TestCase):
         # Test once with the default arguments
         self.task_runner_instance.read_upstream_pandas_csv('dep_one')
         mock_get_stream.assert_called_once_with('dep_one', None)
-        print 'assert called onse a'
+        print('assert called onse a')
         mock_csv_reader.assert_called_once_with(
             filename_or_stream=fake_stream,
             encoding='utf-8'
