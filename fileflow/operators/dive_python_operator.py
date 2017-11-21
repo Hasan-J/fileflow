@@ -6,9 +6,9 @@
 .. moduleauthor:: Miriam Sexton <miriam@industrydive.com>
 """
 
-from airflow.operators import PythonOperator
+from airflow.operators.python_operator import PythonOperator
 
-from .dive_operator import DiveOperator
+from fileflow.operators.dive_operator import DiveOperator
 
 
 class DivePythonOperator(DiveOperator, PythonOperator):
@@ -20,7 +20,7 @@ class DivePythonOperator(DiveOperator, PythonOperator):
     def __init__(self, python_object, python_method="run", *args, **kwargs):
         self.python_object = python_object
         self.python_method = python_method
-        kwargs['python_callable'] = None
+        kwargs['python_callable'] = lambda: None
 
         super(DivePythonOperator, self).__init__(*args, **kwargs)
 
