@@ -143,7 +143,7 @@ class TestTaskRunner(TestCase):
         to the storage driver's get_read_stream method.
         """
         temp_stream = tempfile.TemporaryFile()
-        some_string = 'abcde'
+        some_string = b'abcde'
         temp_stream.write(some_string)
 
         mock_reader = mock.MagicMock()

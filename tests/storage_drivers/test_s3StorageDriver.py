@@ -1,3 +1,4 @@
+# encoding=utf-8
 from unittest import TestCase
 from fileflow.storage_drivers import S3StorageDriver
 from datetime import datetime
@@ -5,6 +6,7 @@ from mock import MagicMock
 from moto import mock_s3
 from nose.plugins.attrib import attr
 import boto
+import sys
 
 
 @attr('unittest')
@@ -78,18 +80,11 @@ class TestS3StorageDriver(TestCase):
         """
         import tempfile
 
-        first_value = 'abc'
-        second_value_file = open('tests/fixtures/SampleUniformData.json', 'r')
-        second_value_string = second_value_file.read()
-        second_value_file.seek(0)
-        third_value_bytes = bytearray(['a', 'b', '\xe4'])
-        third_value_file = tempfile.TemporaryFile()
-        third_value_file.write(third_value_bytes)
-        third_value_file.seek(0)
-
         dag_name = 'the_dag'
         task_name = 'the_task'
 
+        # Write and read back from a string value
+        first_value = 'abc'
         first_key = self.bucket.new_key(dag_name + '/' + task_name + '/' + '2016-01-01')
         first_key.set_contents_from_string(first_value)
         first_key.set_metadata('Content-Type', 'text/plain')
@@ -101,8 +96,12 @@ class TestS3StorageDriver(TestCase):
             task_id=task_name,
             execution_date=datetime(2016, 1, 1)
         )
-        self.assertEqual(first_value, first_result_stream.read())
+        self.assertEqual(first_value, first_result_stream.read().decode('utf-8'))
 
+        # Write and read back from a local json file
+        second_value_file = open('tests/fixtures/SampleUniformData.json', 'r')
+        second_value_string = second_value_file.read()
+        second_value_file.seek(0)
         second_key = self.bucket.new_key(dag_name + '/' + task_name + '/' + '2016-01-02')
         second_key.set_metadata('Content-Type', 'text/plain')
         second_key.set_contents_from_file(second_value_file)
@@ -113,8 +112,12 @@ class TestS3StorageDriver(TestCase):
             task_id=task_name,
             execution_date=datetime(2016, 1, 2)
         )
-        self.assertEqual(second_value_string, second_result_stream.read())
+        self.assertEqual(second_value_string, second_result_stream.read().decode('utf-8'))
 
+        third_value_bytes = u'abč'.encode('utf-8')
+        third_value_file = tempfile.NamedTemporaryFile()
+        third_value_file.write(third_value_bytes)
+        third_value_file.seek(0)
         third_key = self.bucket.new_key(dag_name + '/' + task_name + '/' + '2016-01-03')
         third_key.set_contents_from_file(third_value_file)
         third_key.set_acl('private')
@@ -135,7 +138,7 @@ class TestS3StorageDriver(TestCase):
         self.driver.write('the_dag', 'the_task', datetime(1983, 9, 5), data, 'text/plain')
 
         s3_key = self.bucket.get_key(key_name)
-        actual = s3_key.get_contents_as_string()
+        actual = s3_key.get_contents_as_string(encoding='utf-8')
 
         self.assertEqual(actual, data)
 
@@ -144,9 +147,9 @@ class TestS3StorageDriver(TestCase):
         Test writing to S3 from a stream
         """
         import tempfile
-        stream = tempfile.TemporaryFile()
+        stream = tempfile.NamedTemporaryFile()
 
-        some_string = 'abc'
+        some_string = b'abc'
         stream.write(some_string)
         stream.seek(0)
 
@@ -168,13 +171,14 @@ class TestS3StorageDriver(TestCase):
         file_data = f.read()
 
         s3_key = self.bucket.get_key(second_key_name)
-        actual_data = s3_key.get_contents_as_string()
+        actual_data = s3_key.get_contents_as_string(encoding='utf-8')
 
         self.assertEqual(file_data, actual_data)
 
+        del s3_key
         # Try something that's not a simple string
-        some_values = bytearray(['a', 'b', '\xe4'])
-        stream = tempfile.TemporaryFile()
+        some_values = u'abč'.encode('utf-8')
+        stream = tempfile.NamedTemporaryFile()
         stream.write(some_values)
         stream.seek(0)
 
@@ -184,16 +188,22 @@ class TestS3StorageDriver(TestCase):
         s3_key = self.bucket.get_key(third_key_name)
 
         # Check that the default content type was used
-        self.assertEqual(s3_key.content_type, 'application/octet-stream')
+        # There's a bug in moto with python 3 that injects content types
+        # https://github.com/spulec/moto/issues/657
+        if sys.version_info[0] < 3:
+            self.assertEqual(s3_key.content_type, 'application/octet-stream')
+        else:
+            self.assertEqual(s3_key.content_type,
+                             'text/plain; charset=utf-8, application/octet-stream')
 
-        actual_data_as_string = s3_key.get_contents_as_string()
+        actual_data_as_string = s3_key.get_contents_as_string(encoding='utf-8')
         self.assertIsInstance(actual_data_as_string, str)
-        self.assertEqual(str(some_values), actual_data_as_string)
+        self.assertEqual(some_values.decode('utf-8'), actual_data_as_string)
 
         output_stream = tempfile.TemporaryFile()
         s3_key.get_file(output_stream)
         output_stream.seek(0)
-        self.assertEqual(str(some_values), output_stream.read())
+        self.assertEqual(some_values, output_stream.read())
 
     def test_list_filenames_in_path(self):
         """
@@ -246,6 +256,6 @@ class TestS3StorageDriver(TestCase):
 
         # Does the get.
         existing_key = self.driver.get_or_create_key(key_name)
-        content = existing_key.get_contents_as_string()
+        content = existing_key.get_contents_as_string(encoding='utf-8')
 
         self.assertEqual(content, expected)

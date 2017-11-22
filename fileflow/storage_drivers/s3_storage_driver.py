@@ -83,7 +83,7 @@ class S3StorageDriver(StorageDriver):
 
         if key is not None:
             import tempfile
-            temp_file_stream = tempfile.TemporaryFile(mode='w+b')
+            temp_file_stream = tempfile.NamedTemporaryFile(mode='w+b')
             key.get_file(temp_file_stream)
 
             # Stream has been read in and is now at the end
@@ -118,8 +118,8 @@ class S3StorageDriver(StorageDriver):
         :param string|None content_type: pass None to not set
         """
         # S3 does not like reading streams or chunks, so for now, just set it as a string and write it that way
-        str = stream.read()
-        self.write(dag_id, task_id, execution_date, str, content_type)
+        string = stream.read()
+        self.write(dag_id, task_id, execution_date, string, content_type)
 
     def list_filenames_in_path(self, path):
         """

@@ -61,7 +61,7 @@ class TestFileStorageDriver(TestCase):
         string_value = open('tests/fixtures/SampleUniformData.json', 'r').read()
         actual_result = driver.get_read_stream(*fake_read_stream_args)
 
-        self.assertEqual(actual_result.read(), string_value)
+        self.assertEqual(actual_result.read().decode('utf-8'), string_value)
 
     def test_write(self):
         """
