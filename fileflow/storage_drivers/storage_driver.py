@@ -131,7 +131,7 @@ class StorageDriver(object):
         :return: The formatted date string.
         :rtype: str
         """
-        return execution_date.strftime("%Y-%m-%d")
+        return execution_date.strftime("%Y-%m-%d %H-%M-%S")
 
     def list_filenames_in_path(self, path):
         """
