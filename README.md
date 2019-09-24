@@ -6,7 +6,7 @@ Fileflow is a collection of modules that support data transfer between Airflow t
 
 ### Installation
 
-pip install from git: `pip install git+git://github.com/industrydive/fileflow.git#egg=fileflow`
+pip install from git: `pip install git+git://github.com/Hasan-J/fileflow.git#egg=fileflow`
 
 ### Resources
 

@@ -12,8 +12,8 @@ setup(
     zip_safe=False,
     packages=find_packages(exclude=['docs', 'tests*']),
     install_requires=[
-        'airflow~=1.7.0',
-        'pandas==0.17.0',
+        'apache-airflow>=1.9.0',
+        'pandas>=0.17.0',
         'boto~=2.38.0'
     ],
     test_suite='nose.collector',
