@@ -4,7 +4,7 @@ Extend from the airflow configuration and address any missing fileflow related c
 
 from airflow import configuration as airflow_configuration
 import os
-import boto
+import boto3
 
 
 def _ensure_section_exists(section_name):
@@ -27,46 +27,60 @@ def _ensure_section_exists(section_name):
         airflow_configuration.conf.add_section(section_name)
 
 
-_ensure_section_exists('fileflow')
+_ensure_section_exists("fileflow")
 
 # Set some fileflow settings to a default if they do not already exist.
-if not airflow_configuration.has_option('fileflow', 'environment'):
-    airflow_configuration.set('fileflow', 'environment', 'production')
+if not airflow_configuration.has_option("fileflow", "environment"):
+    airflow_configuration.set("fileflow", "environment", "production")
 
-if not airflow_configuration.has_option('fileflow', 'storage_prefix'):
-    airflow_configuration.set('fileflow', 'storage_prefix', 'storage')
+if not airflow_configuration.has_option("fileflow", "storage_prefix"):
+    airflow_configuration.set("fileflow", "storage_prefix", "storage")
 
-if not airflow_configuration.has_option('fileflow', 'storage_type'):
-    airflow_configuration.set('fileflow', 'storage_type', 'file')
+if not airflow_configuration.has_option("fileflow", "storage_type"):
+    airflow_configuration.set("fileflow", "storage_type", "file")
 
-if not airflow_configuration.has_option('fileflow', 'aws_bucket_name'):
-    airflow_configuration.set('fileflow', 'aws_bucket_name', 'mybeautifulbucket')
+if not airflow_configuration.has_option("fileflow", "aws_bucket_name"):
+    airflow_configuration.set("fileflow", "aws_bucket_name", "mybeautifulbucket")
 
 # For AWS keys, check the AIRFLOW__ style environment variables first
 # Otherwise, fallback to the boto configuration
-aws_access_key_id_env_var = os.environ.get('AIRFLOW__FILEFLOW__AWS_ACCESS_KEY_ID', False)
-aws_secret_access_key_env_var = os.environ.get('AIRFLOW__FILEFLOW__AWS_SECRET_ACCESS_KEY', False)
-boto_config = boto.pyami.config.Config()
+aws_access_key_id_env_var = os.environ.get(
+    "AIRFLOW__FILEFLOW__AWS_ACCESS_KEY_ID", False
+)
+aws_secret_access_key_env_var = os.environ.get(
+    "AIRFLOW__FILEFLOW__AWS_SECRET_ACCESS_KEY", False
+)
 
-if not airflow_configuration.has_option('fileflow', 'aws_access_key_id'):
+if aws_access_key_id_env_var is None or aws_secret_access_key_env_var is None:
+    credentials = boto3.Session().get_credentials().get_frozen_credentials()
+
+if not airflow_configuration.has_option("fileflow", "aws_access_key_id"):
     if aws_access_key_id_env_var:
-        airflow_configuration.set('fileflow', 'aws_access_key_id', aws_access_key_id_env_var)
+        airflow_configuration.set(
+            "fileflow", "aws_access_key_id", aws_access_key_id_env_var
+        )
     else:
-        boto_aws_access_key_id_default = boto_config.get('Credentials', 'aws_access_key_id')
+        boto_aws_access_key_id_default = credentials.access_key
         if boto_aws_access_key_id_default:
-            airflow_configuration.set('fileflow', 'aws_access_key_id', boto_aws_access_key_id_default)
+            airflow_configuration.set(
+                "fileflow", "aws_access_key_id", boto_aws_access_key_id_default
+            )
         else:
-            raise ValueError('No AWS access key_id found')
+            raise ValueError("No AWS access key_id found")
 
-if not airflow_configuration.has_option('fileflow', 'aws_secret_access_key'):
+if not airflow_configuration.has_option("fileflow", "aws_secret_access_key"):
     if aws_secret_access_key_env_var:
-        airflow_configuration.set('fileflow', 'aws_secret_access_key', aws_secret_access_key_env_var)
+        airflow_configuration.set(
+            "fileflow", "aws_secret_access_key", aws_secret_access_key_env_var
+        )
     else:
-        boto_aws_secret_access_key_default = boto_config.get('Credentials', 'aws_secret_access_key')
+        boto_aws_secret_access_key_default = credentials.secret_key
         if boto_aws_secret_access_key_default:
-            airflow_configuration.set('fileflow', 'aws_secret_access_key', boto_aws_secret_access_key_default)
+            airflow_configuration.set(
+                "fileflow", "aws_secret_access_key", boto_aws_secret_access_key_default
+            )
         else:
-            raise ValueError('No AWS secret access key found')
+            raise ValueError("No AWS secret access key found")
 
 
 def get(section, key, **kwargs):
