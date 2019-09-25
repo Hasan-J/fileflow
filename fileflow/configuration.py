@@ -51,7 +51,7 @@ aws_secret_access_key_env_var = os.environ.get(
     "AIRFLOW__FILEFLOW__AWS_SECRET_ACCESS_KEY", False
 )
 
-if aws_access_key_id_env_var is None or aws_secret_access_key_env_var is None:
+if aws_access_key_id_env_var is False or aws_secret_access_key_env_var is False:
     credentials = boto3.Session().get_credentials().get_frozen_credentials()
 
 if not airflow_configuration.has_option("fileflow", "aws_access_key_id"):
